@@ -44,19 +44,32 @@
         <div id="statusMsg" class="status-msg"></div>
     </div>
 
-    <!-- Forçar carregamento do Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Carregar Supabase com Fallback -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <script>
         var SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
         var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTI4MDMsImV4cCI6MjA4OTQ2ODgwM30.rQJZRy364VPS6uCuTkFy9s8Tyn3KxB-E6vxv9ROrdos';
         var supabase = null;
-        
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        } catch (e) {
-            alert('Erro ao carregar banco de dados. Verifique sua conexão.');
+        var retryCount = 0;
+
+        function initSupabase() {
+            if (window.supabase) {
+                try {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    console.log('Supabase carregado!');
+                } catch (e) {
+                    showStatus('Erro na configuração do banco.', 'error');
+                }
+            } else if (retryCount < 10) {
+                retryCount++;
+                setTimeout(initSupabase, 500); // Tentar novamente em meio segundo
+            } else {
+                alert('Erro: Não foi possível carregar a biblioteca do Supabase (CDN bloqueado ou conexão lenta). Tente atualizar a página.');
+            }
         }
+        
+        initSupabase();
 
         var statusEl = document.getElementById('statusMsg');
         var loginBtn = document.getElementById('loginBtn');
