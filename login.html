@@ -17,16 +17,15 @@
         input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; outline: none; font-size: 1rem; }
         .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-bottom: 10px; font-size: 0.95rem; }
         .btn-primary { background: #009ef7; color: white; }
-        .btn-primary:active { background: #0086d1; }
         .btn-secondary { background: #f1faff; color: #009ef7; border: 1px solid #c0eaff; }
-        .status-msg { display: none; margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 0.8rem; text-align: center; border: 1px solid transparent; }
+        .status-msg { display: none; margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 0.8rem; text-align: center; border: 1px solid transparent; word-break: break-all; }
     </style>
 </head>
 <body>
     <div class="login-card">
         <div class="logo"><i class="fas fa-boxes-stacked" style="color: #009ef7;"></i><span>AMZ Panel</span></div>
-        <h2>Bem-vindo</h2>
-        <p>Acesse ou crie sua conta admin</p>
+        <h2>Painel Administrativo</h2>
+        <p>Acesse com suas credenciais</p>
         
         <form id="mainForm" onsubmit="return false;">
             <div class="form-group">
@@ -37,131 +36,141 @@
                 <label>Senha</label>
                 <input type="password" id="passwordInput" placeholder="••••••••">
             </div>
-            <button type="button" class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Acessar Painel</button>
-            <button type="button" class="btn btn-secondary" id="signupBtn" onclick="handleSignup()">Cadastrar Novo Usuário</button>
+            <button type="button" class="btn btn-primary" id="loginBtn">Acessar Painel</button>
+            <button type="button" class="btn btn-secondary" id="signupBtn">Cadastrar Novo Usuário</button>
         </form>
         
         <div id="statusMsg" class="status-msg"></div>
     </div>
 
-    <!-- Local Supabase Library (Fast & Secure) -->
+    <!-- Script Local -->
     <script src="lib/supabase.js"></script>
     
     <script>
+        // 1. Definições Iniciais
         var SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
         var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTI4MDMsImV4cCI6MjA4OTQ2ODgwM30.rQJZRy364VPS6uCuTkFy9s8Tyn3KxB-E6vxv9ROrdos';
         var supabase = null;
-        var retryCount = 0;
-
-        function initSupabase() {
-            if (window.supabase) {
-                try {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    console.log('Supabase carregado!');
-                } catch (e) {
-                    showStatus('Erro na configuração do banco.', 'error');
-                }
-            } else if (retryCount < 10) {
-                retryCount++;
-                setTimeout(initSupabase, 500); // Tentar novamente em meio segundo
-            } else {
-                alert('Erro: Não foi possível carregar a biblioteca do Supabase (CDN bloqueado ou conexão lenta). Tente atualizar a página.');
-            }
-        }
         
-        initSupabase();
-
+        // Elementos
         var statusEl = document.getElementById('statusMsg');
         var loginBtn = document.getElementById('loginBtn');
         var signupBtn = document.getElementById('signupBtn');
+        var emailInput = document.getElementById('emailInput');
+        var passwordInput = document.getElementById('passwordInput');
 
-        function showStatus(msg, colorType) {
+        // 2. Funções de Ajuda
+        function showStatus(msg, isError) {
             statusEl.innerText = msg;
             statusEl.style.display = 'block';
-            if (colorType === 'error') {
-                statusEl.style.background = '#fff5f8';
+            if (isError) {
+                statusEl.style.backgroundColor = '#fff5f8';
                 statusEl.style.color = '#f1416c';
                 statusEl.style.borderColor = '#f8c5d2';
             } else {
-                statusEl.style.background = '#e8fff3';
+                statusEl.style.backgroundColor = '#e8fff3';
                 statusEl.style.color = '#50cd89';
                 statusEl.style.borderColor = '#50cd89';
             }
         }
 
-        function handleLogin() {
-            var email = document.getElementById('emailInput').value.trim();
-            var password = document.getElementById('passwordInput').value;
+        // 3. Inicialização do Banco
+        function init() {
+            if (window.supabase) {
+                try {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    console.log('Banco de dados OK');
+                } catch (e) {
+                    showStatus('Erro ao carregar banco: ' + e.message, true);
+                }
+            } else {
+                showStatus('Erro: Biblioteca Supabase não encontrada. Recarregue a página.', true);
+            }
+        }
+
+        // 4. Lógica de Login
+        function doLogin() {
+            var email = emailInput.value.trim();
+            var password = passwordInput.value;
 
             if (!email || !password) {
-                showStatus('Preencha todos os campos.', 'error');
+                showStatus('Preencha email e senha.', true);
                 return;
             }
 
             loginBtn.disabled = true;
-            loginBtn.innerText = 'Verificando...';
-            showStatus('Aguarde...', 'normal');
+            loginBtn.innerText = 'Entrando...';
+            showStatus('Verificando conta...', false);
+
+            if (!supabase) {
+                showStatus('Banco de dados ainda não carregou. Aguarde 3 segundos.', true);
+                loginBtn.disabled = false;
+                loginBtn.innerText = 'Acessar Painel';
+                return;
+            }
 
             supabase.auth.signInWithPassword({ email: email, password: password })
-                .then(function(result) {
-                    if (result.error) {
-                        showStatus('Erro: ' + result.error.message, 'error');
+                .then(function(res) {
+                    if (res.error) {
+                        showStatus('Falha: ' + res.error.message, true);
                         loginBtn.disabled = false;
                         loginBtn.innerText = 'Acessar Painel';
                     } else {
+                        showStatus('Sucesso! Redirecionando...', false);
                         window.location.href = 'admin.html';
                     }
                 })
                 .catch(function(err) {
-                    showStatus('Erro de conexão.', 'error');
+                    showStatus('Erro de rede. Tente novamente.', true);
                     loginBtn.disabled = false;
                     loginBtn.innerText = 'Acessar Painel';
                 });
         }
 
-        function handleSignup() {
-            var email = document.getElementById('emailInput').value.trim();
-            var password = document.getElementById('passwordInput').value;
+        // 5. Lógica de Cadastro
+        function doSignup() {
+            var email = emailInput.value.trim();
+            var password = passwordInput.value;
 
             if (!email || !password) {
-                showStatus('Preencha todos os campos.', 'error');
+                showStatus('Preencha email e senha para cadastrar.', true);
                 return;
             }
 
             signupBtn.disabled = true;
             signupBtn.innerText = 'Cadastrando...';
-            showStatus('Processando...', 'normal');
+            showStatus('Criando sua conta...', false);
 
             supabase.auth.signUp({ email: email, password: password })
-                .then(function(result) {
+                .then(function(res) {
+                    if (res.error) {
+                        showStatus('Erro: ' + res.error.message, true);
+                    } else if (res.data.user && res.data.user.identities && res.data.user.identities.length === 0) {
+                        showStatus('Esta conta já existe. Use o botão Entrar.', true);
+                    } else if (res.data.session) {
+                        window.location.href = 'admin.html';
+                    } else {
+                        showStatus('Conta criada! Desative a "Confirmação de Email" no Supabase para entrar agora.', false);
+                    }
                     signupBtn.disabled = false;
                     signupBtn.innerText = 'Cadastrar Novo Usuário';
-                    
-                    if (result.error) {
-                        showStatus('Erro: ' + result.error.message, 'error');
-                    } else {
-                        if (result.data.user && result.data.user.identities && result.data.user.identities.length === 0) {
-                            showStatus('Usuário já existe. Tente logar.', 'error');
-                        } else if (result.data.session) {
-                            window.location.href = 'admin.html';
-                        } else {
-                            showStatus('Sucesso! Verifique se a confirmação de email está desativada no Supabase.', 'success');
-                        }
-                    }
                 })
                 .catch(function(err) {
-                    showStatus('Erro ao cadastrar.', 'error');
+                    showStatus('Erro de conexão.', true);
                     signupBtn.disabled = false;
                     signupBtn.innerText = 'Cadastrar Novo Usuário';
                 });
         }
-        
-        // Ativar tecla Enter
-        document.getElementById('mainForm').addEventListener('keydown', function(e) {
-            if (e.keyCode === 13) {
-                handleLogin();
-            }
-        });
+
+        // 6. Eventos
+        loginBtn.onclick = doLogin;
+        signupBtn.onclick = doSignup;
+        document.getElementById('mainForm').onkeydown = function(e) {
+            if (e.keyCode === 13) { doLogin(); }
+        };
+
+        // Iniciar
+        setTimeout(init, 500);
     </script>
 </body>
 </html>
