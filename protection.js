@@ -98,6 +98,13 @@
             window.location.href = 'culinaria.html';
             return;
         }
+
+        // If we are on the entry point (index.html or root) and NOT shielded, go to home.html
+        const actualPath = window.location.pathname.split('/').pop();
+        if (actualPath === 'index.html' || actualPath === '') {
+            console.log('Codex: User Valid. Transitioning to Home...');
+            window.location.href = 'home.html';
+        }
     } catch (e) {
         console.error('Cloaker Error:', e);
     }
