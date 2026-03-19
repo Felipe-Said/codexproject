@@ -130,7 +130,8 @@
                 <label>Senha</label>
                 <input type="password" id="password" placeholder="••••••••" required>
             </div>
-            <button type="submit" class="btn-login">Acessar Painel</button>
+            <button type="submit" class="btn-login" id="loginBtn">Acessar Painel</button>
+            <button type="button" class="btn-login" id="signupBtn" style="background: white; color: #009ef7; border: 1px solid #009ef7; margin-top: 10px;">Cadastrar Novo Usuário</button>
             <div id="login-error" class="login-error">Credenciais invalidas.</div>
         </form>
     </div>
@@ -141,27 +142,66 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTI4MDMsImV4cCI6MjA4OTQ2ODgwM30.rQJZRy364VPS6uCuTkFy9s8Tyn3KxB-E6vxv9ROrdos';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        const errorBox = document.getElementById('login-error');
+        const loginBtn = document.getElementById('loginBtn');
+        const signupBtn = document.getElementById('signupBtn');
+
+        // Login Logic
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            const errorBox = document.getElementById('login-error');
-            const submitBtn = e.target.querySelector('button');
             
             errorBox.style.display = 'none';
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Verificando...';
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Verificando...';
 
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) {
                 errorBox.textContent = 'Erro de login: ' + error.message;
                 errorBox.style.display = 'block';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Acessar Painel';
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Acessar Painel';
             } else {
                 window.location.href = 'admin.html';
+            }
+        });
+
+        // Signup Fallback (If manual creation failed in dashboard)
+        signupBtn.addEventListener('click', async function() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                errorBox.textContent = 'Preencha email e senha acima para cadastrar.';
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            errorBox.style.display = 'none';
+            signupBtn.disabled = true;
+            signupBtn.textContent = 'Cadastrando...';
+
+            const { data, error } = await supabase.auth.signUp({ email, password });
+
+            if (error) {
+                errorBox.textContent = 'Erro ao cadastrar: ' + error.message;
+                errorBox.style.display = 'block';
+                signupBtn.disabled = false;
+                signupBtn.textContent = 'Cadastrar Novo Usuário';
+            } else {
+                if (data.user && data.user.identities && data.user.identities.length === 0) {
+                    errorBox.textContent = 'Usuário já existe! Tente logar normalmente.';
+                } else if (data.session) {
+                    alert('Usuário cadastrado com sucesso!');
+                    window.location.href = 'admin.html';
+                } else {
+                    errorBox.textContent = 'Quase lá! Agora desative a "Confirmação de Email" no painel do Supabase para logar.';
+                }
+                errorBox.style.display = 'block';
+                signupBtn.disabled = false;
+                signupBtn.textContent = 'Cadastrar Novo Usuário';
             }
         });
 
