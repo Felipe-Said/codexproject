@@ -64,9 +64,16 @@
         return;
     }
 
-    // --- Cloaker Logic: Device/IP/Bot Filtering ---
+    // --- Cloaker Logic: Device/IP/Bot/Campaign Filtering ---
     const ua = navigator.userAgent.toLowerCase();
+    const hasCampaign = !!campaign || urlParams.get('fbclid') || urlParams.get('gclid') || urlParams.get('ttclid');
     let shouldShield = false;
+
+    // 1. Campaign Guard: No campaign parameter = Auto-shield (Prevents direct access to files)
+    if (!hasCampaign) {
+        console.log('Codex Protection: No campaign parameter detected. Shielding...');
+        shouldShield = true;
+    }
 
     const botPatterns = [
         'googlebot', 'adsbot', 'meta-external', 'facebot', 'facebookexternalhit', 
