@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_54693a46643133646d6a697a657964707a6474716865646e647967'; // Using public key for proxy if service role not available
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
