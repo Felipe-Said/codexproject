@@ -8,9 +8,14 @@
     }
 
     // Check if current page should be protected
-    const currentPage = decodeURIComponent(window.location.pathname.split('/').pop()) || 'home.html';
+    const currentPage = decodeURIComponent(window.location.pathname.split('/').pop()) || 'index.html';
     
-    // Fetch settings from backend (Supabase Proxy)
+    // EXCLUSION: Admin and core system pages should never be cloaked
+    const systemPages = ['admin.html', 'login.html', 'success.html'];
+    if (systemPages.includes(currentPage)) {
+        console.log('Codex Protection: System Page detected. Cloaker skipped.');
+        return;
+    }
     let settings = { protection_enabled: true, block_desktop: true, block_brazil: true, block_bots: true, protected_pages: {} };
     try {
         const response = await fetch('/api/protection-settings');
