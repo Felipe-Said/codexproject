@@ -6,114 +6,147 @@
     <title>Admin Login | AMZ Offer</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        .login-card { background: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 400px; border: 1px solid #eff2f5; }
-        .logo { text-align: center; font-size: 1.8rem; font-weight: 700; color: #181c32; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        h2 { font-size: 1.25rem; color: #181c32; margin-bottom: 8px; text-align: center; }
-        p { color: #a1a5b7; font-size: 0.9rem; text-align: center; margin-bottom: 25px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: #3f4254; }
-        input { width: 100%; padding: 12px 16px; border: 1px solid #e1e3ea; border-radius: 8px; outline: none; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; display: flex; align-items: center; justify-content: center; height: 100vh; padding: 20px; }
+        .login-card { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 380px; }
+        .logo { text-align: center; font-size: 1.6rem; font-weight: 700; color: #181c32; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        h2 { font-size: 1.2rem; margin-bottom: 8px; text-align: center; }
+        p { color: #888; font-size: 0.85rem; text-align: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85rem; }
+        input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; outline: none; font-size: 1rem; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-bottom: 10px; font-size: 0.95rem; }
         .btn-primary { background: #009ef7; color: white; }
-        .btn-secondary { background: white; color: #009ef7; border: 1px solid #009ef7; }
-        .login-error { display: none; margin-top: 14px; padding: 12px; border-radius: 8px; background: #fff5f8; border: 1px solid #f8c5d2; color: #f1416c; font-size: 0.85rem; text-align: center; }
+        .btn-primary:active { background: #0086d1; }
+        .btn-secondary { background: #f1faff; color: #009ef7; border: 1px solid #c0eaff; }
+        .status-msg { display: none; margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 0.8rem; text-align: center; border: 1px solid transparent; }
     </style>
 </head>
 <body>
     <div class="login-card">
         <div class="logo"><i class="fas fa-boxes-stacked" style="color: #009ef7;"></i><span>AMZ Panel</span></div>
-        <h2>Acesso ao Painel</h2>
-        <p>Digite suas credenciais do Supabase</p>
+        <h2>Bem-vindo</h2>
+        <p>Acesse ou crie sua conta admin</p>
         
-        <div class="form-group">
-            <label>E-mail</label>
-            <input type="text" id="emailInput" placeholder="seu@email.com">
-        </div>
-        <div class="form-group">
-            <label>Senha</label>
-            <input type="password" id="passwordInput" placeholder="••••••••">
-        </div>
-        <button class="btn btn-primary" id="loginBtn">Acessar Painel</button>
-        <button class="btn btn-secondary" id="signupBtn">Cadastrar Novo Usuário</button>
-        <div id="statusMsg" class="login-error"></div>
+        <form id="mainForm" onsubmit="return false;">
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="text" id="emailInput" placeholder="seu@email.com">
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="passwordInput" placeholder="••••••••">
+            </div>
+            <button type="button" class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Acessar Painel</button>
+            <button type="button" class="btn btn-secondary" id="signupBtn" onclick="handleSignup()">Cadastrar Novo Usuário</button>
+        </form>
+        
+        <div id="statusMsg" class="status-msg"></div>
     </div>
 
+    <!-- Forçar carregamento do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script>
-        const SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTI4MDMsImV4cCI6MjA4OTQ2ODgwM30.rQJZRy364VPS6uCuTkFy9s8Tyn3KxB-E6vxv9ROrdos';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        const emailEl = document.getElementById('emailInput');
-        const passEl = document.getElementById('passwordInput');
-        const statusEl = document.getElementById('statusMsg');
-        const loginBtn = document.getElementById('loginBtn');
-        const signupBtn = document.getElementById('signupBtn');
-
-        function showStatus(msg, isError = true) {
-            statusEl.textContent = msg;
-            statusEl.style.display = 'block';
-            statusEl.style.background = isError ? '#fff5f8' : '#e8fff3';
-            statusEl.style.color = isError ? '#f1416c' : '#50cd89';
-            statusEl.style.borderColor = isError ? '#f8c5d2' : '#50cd89';
+        var SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
+        var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTI4MDMsImV4cCI6MjA4OTQ2ODgwM30.rQJZRy364VPS6uCuTkFy9s8Tyn3KxB-E6vxv9ROrdos';
+        var supabase = null;
+        
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) {
+            alert('Erro ao carregar banco de dados. Verifique sua conexão.');
         }
 
-        loginBtn.addEventListener('click', async () => {
-            const email = emailEl.value.trim();
-            const password = passEl.value;
+        var statusEl = document.getElementById('statusMsg');
+        var loginBtn = document.getElementById('loginBtn');
+        var signupBtn = document.getElementById('signupBtn');
+
+        function showStatus(msg, colorType) {
+            statusEl.innerText = msg;
+            statusEl.style.display = 'block';
+            if (colorType === 'error') {
+                statusEl.style.background = '#fff5f8';
+                statusEl.style.color = '#f1416c';
+                statusEl.style.borderColor = '#f8c5d2';
+            } else {
+                statusEl.style.background = '#e8fff3';
+                statusEl.style.color = '#50cd89';
+                statusEl.style.borderColor = '#50cd89';
+            }
+        }
+
+        function handleLogin() {
+            var email = document.getElementById('emailInput').value.trim();
+            var password = document.getElementById('passwordInput').value;
 
             if (!email || !password) {
-                showStatus('Por favor, preencha todos os campos.');
+                showStatus('Preencha todos os campos.', 'error');
                 return;
             }
 
             loginBtn.disabled = true;
-            loginBtn.textContent = 'Verificando...';
-            statusEl.style.display = 'none';
+            loginBtn.innerText = 'Verificando...';
+            showStatus('Aguarde...', 'normal');
 
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            supabase.auth.signInWithPassword({ email: email, password: password })
+                .then(function(result) {
+                    if (result.error) {
+                        showStatus('Erro: ' + result.error.message, 'error');
+                        loginBtn.disabled = false;
+                        loginBtn.innerText = 'Acessar Painel';
+                    } else {
+                        window.location.href = 'admin.html';
+                    }
+                })
+                .catch(function(err) {
+                    showStatus('Erro de conexão.', 'error');
+                    loginBtn.disabled = false;
+                    loginBtn.innerText = 'Acessar Painel';
+                });
+        }
 
-            if (error) {
-                showStatus('Erro: ' + error.message);
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Acessar Painel';
-            } else {
-                window.location.href = 'admin.html';
-            }
-        });
-
-        signupBtn.addEventListener('click', async () => {
-            const email = emailEl.value.trim();
-            const password = passEl.value;
+        function handleSignup() {
+            var email = document.getElementById('emailInput').value.trim();
+            var password = document.getElementById('passwordInput').value;
 
             if (!email || !password) {
-                showStatus('Preencha email e senha para cadastrar.');
+                showStatus('Preencha todos os campos.', 'error');
                 return;
             }
 
             signupBtn.disabled = true;
-            signupBtn.textContent = 'Cadastrando...';
-            statusEl.style.display = 'none';
+            signupBtn.innerText = 'Cadastrando...';
+            showStatus('Processando...', 'normal');
 
-            const { data, error } = await supabase.auth.signUp({ email, password });
-
-            if (error) {
-                showStatus('Erro ao cadastrar: ' + error.message);
-                signupBtn.disabled = false;
-                signupBtn.textContent = 'Cadastrar Novo Usuário';
-            } else {
-                if (data.user && data.user.identities && data.user.identities.length === 0) {
-                    showStatus('Usuário já existe! Tente o botão Acessar.', true);
-                } else if (data.session) {
-                    showStatus('Sucesso!', false);
-                    window.location.href = 'admin.html';
-                } else {
-                    showStatus('Cadastro enviado! Verifique se "Confirm Email" está desativado no Supabase.', false);
-                }
-                signupBtn.disabled = false;
-                signupBtn.textContent = 'Cadastrar Novo Usuário';
+            supabase.auth.signUp({ email: email, password: password })
+                .then(function(result) {
+                    signupBtn.disabled = false;
+                    signupBtn.innerText = 'Cadastrar Novo Usuário';
+                    
+                    if (result.error) {
+                        showStatus('Erro: ' + result.error.message, 'error');
+                    } else {
+                        if (result.data.user && result.data.user.identities && result.data.user.identities.length === 0) {
+                            showStatus('Usuário já existe. Tente logar.', 'error');
+                        } else if (result.data.session) {
+                            window.location.href = 'admin.html';
+                        } else {
+                            showStatus('Sucesso! Verifique se a confirmação de email está desativada no Supabase.', 'success');
+                        }
+                    }
+                })
+                .catch(function(err) {
+                    showStatus('Erro ao cadastrar.', 'error');
+                    signupBtn.disabled = false;
+                    signupBtn.innerText = 'Cadastrar Novo Usuário';
+                });
+        }
+        
+        // Ativar tecla Enter
+        document.getElementById('mainForm').addEventListener('keydown', function(e) {
+            if (e.keyCode === 13) {
+                handleLogin();
             }
         });
     </script>
