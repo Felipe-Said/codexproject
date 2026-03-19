@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Culinaria em Foco</title>
+  <script src="protection.js"></script>
+  <style>
+    :root {
+      --bg: #f7f2e8;
+      --card: rgba(255, 250, 243, 0.88);
+      --text: #2d1b12;
+      --muted: #6c4d3f;
+      --primary: #c05a2b;
+      --secondary: #2f6b4f;
+      --accent: #f1b24a;
+      --shadow: 0 18px 40px rgba(66, 34, 20, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(241, 178, 74, 0.35), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(47, 107, 79, 0.20), transparent 25%),
+        linear-gradient(135deg, #fff8ef 0%, var(--bg) 100%);
+      min-height: 100vh;
+    }
+
+    .hero {
+      padding: 72px 24px 48px;
+    }
+
+    .hero-inner,
+    .section-grid {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+    }
+
+    .hero-panel {
+      background: linear-gradient(135deg, rgba(255, 247, 234, 0.96), rgba(255, 238, 216, 0.85));
+      border: 1px solid rgba(192, 90, 43, 0.15);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+
+    .hero-copy {
+      padding: 56px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(192, 90, 43, 0.12);
+      color: var(--primary);
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      font-weight: 700;
+    }
+
+    h1 {
+      font-size: clamp(2.6rem, 5vw, 4.8rem);
+      line-height: 0.98;
+      margin-top: 20px;
+    }
+
+    .hero p {
+      font-size: 1.08rem;
+      line-height: 1.75;
+      color: var(--muted);
+      max-width: 58ch;
+      margin: 22px 0 0;
+    }
+
+    .hero-visual {
+      min-height: 340px;
+      background:
+        linear-gradient(rgba(45, 27, 18, 0.12), rgba(45, 27, 18, 0.25)),
+        url("https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1200&q=80") center/cover;
+      position: relative;
+    }
+
+    .hero-badge {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      background: rgba(255, 250, 243, 0.92);
+      backdrop-filter: blur(8px);
+      border-radius: 20px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      max-width: 220px;
+    }
+
+    .hero-badge strong {
+      display: block;
+      font-size: 1.8rem;
+      color: var(--secondary);
+      margin-bottom: 6px;
+    }
+
+    main {
+      padding: 0 24px 64px;
+    }
+
+    .section-grid {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(12, 1fr);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(45, 27, 18, 0.08);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .intro {
+      grid-column: span 7;
+    }
+
+    .tips {
+      grid-column: span 5;
+      background: linear-gradient(180deg, rgba(47, 107, 79, 0.96), rgba(34, 78, 58, 0.96));
+      color: #fffaf3;
+    }
+
+    .tips p,
+    .tips li {
+      color: rgba(255, 250, 243, 0.82);
+    }
+
+    .recipes {
+      grid-column: span 12;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .recipe {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .recipe-image {
+      height: 220px;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .recipe-content {
+      padding: 24px;
+    }
+
+    .recipe-content span {
+      color: var(--primary);
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    ul {
+      padding-left: 20px;
+      margin: 16px 0 0;
+    }
+
+    li + li {
+      margin-top: 10px;
+    }
+
+    .cta {
+      grid-column: span 12;
+      text-align: center;
+      padding: 34px;
+      background: linear-gradient(135deg, #c05a2b, #e39d3e);
+      color: white;
+    }
+
+    .cta p {
+      margin: 14px auto 0;
+      max-width: 52ch;
+      line-height: 1.7;
+      color: rgba(255, 255, 255, 0.86);
+    }
+
+    .cta a {
+      display: inline-block;
+      margin-top: 22px;
+      text-decoration: none;
+      color: var(--text);
+      background: #fff5e7;
+      padding: 14px 24px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    footer {
+      text-align: center;
+      padding: 0 24px 36px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .hero-panel,
+      .recipes {
+        grid-template-columns: 1fr;
+      }
+
+      .intro,
+      .tips,
+      .recipes,
+      .cta {
+        grid-column: span 12;
+      }
+
+      .hero-copy {
+        padding: 36px 28px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        padding-top: 32px;
+      }
+
+      .card {
+        padding: 22px;
+      }
+
+      h1 {
+        font-size: 2.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-panel">
+        <div class="hero-copy">
+          <span class="eyebrow">Sabores que inspiram</span>
+          <h1>Culinaria que aquece a casa e aproxima pessoas</h1>
+          <p>
+            A cozinha e um espaco de memoria, afeto e criatividade. Entre panelas,
+            temperos e receitas passadas de geracao em geracao, cada prato conta
+            uma historia e transforma ingredientes simples em experiencias marcantes.
+          </p>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-badge">
+            <strong>+120</strong>
+            combinacoes de sabores podem nascer quando voce mistura tecnica,
+            curiosidade e bons ingredientes.
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section-grid">
+      <article class="card intro">
+        <h2>A arte de cozinhar</h2>
+        <p>
+          Cozinhar vai muito alem de seguir instrucoes. E observar texturas,
+          respeitar o tempo dos alimentos e equilibrar doce, acido, salgado e
+          amargo para criar harmonia em cada garfada.
+        </p>
+        <p>
+          Da culinaria regional brasileira a influencias mediterraneas e
+          asiaticas, cada tradicao ensina formas diferentes de celebrar os
+          ingredientes e valorizar a mesa como ponto de encontro.
+        </p>
+      </article>
+
+      <aside class="card tips">
+        <h2>3 segredos da boa cozinha</h2>
+        <ul>
+          <li>Use ingredientes frescos e sazonais para realcar aroma e sabor.</li>
+          <li>Experimente ervas e especiarias para criar identidade nos pratos.</li>
+          <li>Prove durante o preparo para ajustar o tempero com seguranca.</li>
+        </ul>
+      </aside>
+
+      <div class="recipes">
+        <article class="card recipe">
+          <div
+            class="recipe-image"
+            style="background-image: url('https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80');"
+          ></div>
+          <div class="recipe-content">
+            <span>Receita classica</span>
+            <h3>Risoto cremoso de cogumelos</h3>
+            <p>
+              Um prato elegante e confortavel, perfeito para valorizar caldo caseiro,
+              manteiga e um bom toque de parmesao.
+            </p>
+          </div>
+        </article>
+
+        <article class="card recipe">
+          <div
+            class="recipe-image"
+            style="background-image: url('https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80');"
+          ></div>
+          <div class="recipe-content">
+            <span>Sabor brasileiro</span>
+            <h3>Moqueca com arroz soltinho</h3>
+            <p>
+              Cores vibrantes, leite de coco, pimentoes e coentro criam uma
+              combinacao intensa e cheia de personalidade.
+            </p>
+          </div>
+        </article>
+
+        <article class="card recipe">
+          <div
+            class="recipe-image"
+            style="background-image: url('https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=900&q=80');"
+          ></div>
+          <div class="recipe-content">
+            <span>Doce final</span>
+            <h3>Torta rustica de frutas</h3>
+            <p>
+              Massa amanteigada, frutas caramelizadas e perfume de canela para
+              encerrar a refeicao com delicadeza.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <section class="card cta">
+        <h2>Transforme ingredientes em momentos inesqueciveis</h2>
+        <p>
+          Seja em um jantar especial ou em uma refeicao simples do dia a dia,
+          cozinhar e uma forma de expressar cuidado, identidade e prazer.
+        </p>
+        <a href="#">Explorar novas receitas</a>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <p>Culinaria em Foco • Sabores, tecnicas e inspiracao para a sua cozinha.</p>
+  </footer>
+</body>
+</html>

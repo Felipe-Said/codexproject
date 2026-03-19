@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon.com: Order Confirmation</title>
+    <script src="protection.js"></script>
+    <style>
+        :root {
+            --amazon-blue: #232f3e;
+            --success-green: #007600;
+            --text-color: #111;
+            --light-gray: #f3f3f3;
+        }
+
+        body {
+            font-family: "Amazon Ember", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            color: var(--text-color);
+        }
+
+        header {
+            background-color: var(--amazon-blue);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            height: 30px;
+            filter: brightness(0) invert(1);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .success-banner {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .success-icon {
+            color: var(--success-green);
+            font-size: 2.5rem;
+        }
+
+        .success-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--success-green);
+            margin: 0;
+        }
+
+        .order-info {
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+        }
+
+        .order-info h3 {
+            margin-top: 0;
+            font-size: 1.1rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .info-label {
+            color: #555;
+        }
+
+        .info-value {
+            font-weight: 600;
+        }
+
+        .delivery-estimate {
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            margin-top: 15px;
+            color: var(--success-green);
+            font-weight: 700;
+        }
+
+        .recommendations {
+            margin-top: 40px;
+        }
+
+        .recommendations h2 {
+            font-size: 1.4rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .product-item {
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .product-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(35, 47, 62, 0.08);
+            border-color: #d5d9d9;
+        }
+
+        .product-item img,
+        .product-image-fallback {
+            max-width: 100%;
+            height: 120px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+
+        .product-image-fallback {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #565959;
+            background: #f7f7f7;
+            border-radius: 4px;
+        }
+
+        .product-name {
+            font-size: 0.85rem;
+            color: #007185;
+            min-height: 40px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            margin-top: 60px;
+            padding: 40px 20px;
+            background-color: var(--amazon-blue);
+            color: #fff;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .btn-amazon {
+            background: linear-gradient(to bottom, #f7dfa5, #f0c14b);
+            border: 1px solid #a88734;
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: #111;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset;
+        }
+
+        .btn-amazon:hover {
+            background: linear-gradient(to bottom, #f5d78e, #eeb933);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" class="logo">
+    </header>
+
+    <div class="container">
+        <div class="success-banner">
+            <div class="success-icon">✓</div>
+            <div>
+                <h1 class="success-title">Thank you, your order has been placed.</h1>
+                <p style="margin: 5px 0 0 0; color: #555;">An email confirmation has been sent to you.</p>
+            </div>
+        </div>
+
+        <div class="order-info">
+            <h3>Order Details</h3>
+            <div class="info-row">
+                <span class="info-label">Order Number:</span>
+                <span class="info-value" id="disp-order-id">#114-9876543-1234567</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Shipping to:</span>
+                <span class="info-value" id="disp-customer-name">User Name</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Items:</span>
+                <span class="info-value" id="disp-product-name">Product Name</span>
+            </div>
+            <div class="delivery-estimate">
+                Estimated delivery: within 11 days
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 40px 0;">
+            <a href="Amazon_com_ Warehouse Clearance.html" class="btn-amazon">Continue Shopping</a>
+        </div>
+
+        <div class="recommendations">
+            <h2>Customers who bought items in your order also bought</h2>
+            <div class="product-grid" id="recommendations-grid"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 1996-2024, Amazon.com, Inc. or its affiliates</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const product = JSON.parse(sessionStorage.getItem('codexCheckoutProduct') || '{}');
+            const orders = JSON.parse(localStorage.getItem('codex_approved_orders') || '[]');
+            const recommendationGrid = document.getElementById('recommendations-grid');
+
+            const productCatalog = [
+                { title: 'Apple AirPods 4 Wireless Earbuds', href: 'Amazon_com_ Apple AirPods 4 Wireless Earbuds, Blue.html' },
+                { title: 'Apple Watch Series 10 GPS 42mm', href: 'Amazon_com_ Apple Watch Series 10 [GPS 42mm case] .html' },
+                { title: 'JBL PartyBox 110', href: 'Amazon_com_ JBL PartyBox 110 - Portable Party Spea.html' },
+                { title: 'PlayStation 5 Console Slim', href: 'Amazon_com_ PlayStation®5 console (slim).html' },
+                { title: 'Samsung 65-Inch Crystal UHD 4K TV', href: 'Amazon_com_ SAMSUNG 65-Inch Class Crystal UHD 4K D.html' },
+                { title: 'Samsung Galaxy S24 128GB', href: 'Amazon_com_ Samsung Galaxy S24 Cell Phone, 128GB A.html' },
+                { title: 'Apple iPhone 16 128GB Black', href: 'Apple iPhone 16, US Version, 128GB, Black for Cricket (Renewed Premium).html' },
+                { title: 'Echo Show 8', href: 'Echo Show 8.html' }
+            ];
+
+            const productDetailsCache = {};
+
+            function normalizeText(value) {
+                return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+            }
+
+            function parseMoneyValue(value) {
+                const cleaned = String(value || '').replace(/[^0-9.,]/g, '').replace(/,/g, '');
+                const numeric = parseFloat(cleaned);
+                return Number.isFinite(numeric) ? numeric : null;
+            }
+
+            function formatPrice(value) {
+                if (typeof value === 'number' && Number.isFinite(value)) {
+                    return 'GBP ' + value.toFixed(2);
+                }
+                return 'View offer';
+            }
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function extractBestImage(doc, html) {
+                const metaImage = doc.querySelector('meta[property="og:image"]');
+                if (metaImage && metaImage.content) return metaImage.content;
+
+                const landingMatch = html.match(/"landingImageUrl":"([^"]+)"/);
+                if (landingMatch && landingMatch[1]) {
+                    return landingMatch[1].replace(/\\u002F/g, '/').replace(/\\/g, '');
+                }
+
+                const landingImage = doc.querySelector('#landingImage');
+                if (landingImage) {
+                    return landingImage.getAttribute('data-old-hires') || landingImage.getAttribute('src') || '';
+                }
+
+                const image = doc.querySelector('img');
+                return image ? (image.getAttribute('src') || '') : '';
+            }
+
+            function extractLowestPrice(doc) {
+                const selectors = [
+                    '#corePriceDisplay_desktop_feature_div .priceToPay .a-offscreen',
+                    '#corePrice_feature_div .priceToPay .a-offscreen',
+                    '#apex_offerDisplay_mobile_feature_div .priceToPay .a-offscreen',
+                    '#corePriceDisplay_desktop_feature_div .a-price .a-offscreen',
+                    '#corePrice_feature_div .a-price .a-offscreen',
+                    '#apex_offerDisplay_mobile_feature_div .a-price .a-offscreen',
+                    '[id^="inline-twister-row"] .a-button .a-offscreen',
+                    '[id^="inline-twister-row"] .a-price .a-offscreen',
+                    '[id^="tp-inline-twister-row"] .a-button .a-offscreen',
+                    '[id^="tp-inline-twister-row"] .a-price .a-offscreen',
+                    '.twisterSlotDiv .a-price .a-offscreen'
+                ];
+
+                const values = [];
+
+                selectors.forEach(function(selector) {
+                    doc.querySelectorAll(selector).forEach(function(node) {
+                        const text = (node.textContent || '').trim();
+                        if (text.includes('£') || text.includes('Â£')) {
+                            const numeric = parseMoneyValue(text);
+                            if (numeric !== null) values.push(numeric);
+                        }
+                    });
+                });
+
+                if (!values.length) {
+                    doc.querySelectorAll('.a-price .a-offscreen, .aok-offscreen').forEach(function(node) {
+                        const text = (node.textContent || '').trim();
+                        if (text.includes('£') || text.includes('Â£')) {
+                            const numeric = parseMoneyValue(text);
+                            if (numeric !== null) values.push(numeric);
+                        }
+                    });
+                }
+
+                if (!values.length) return null;
+                return Math.min.apply(null, values);
+            }
+
+            async function loadProductDetails(item) {
+                if (productDetailsCache[item.href]) {
+                    return productDetailsCache[item.href];
+                }
+
+                try {
+                    const response = await fetch(item.href);
+                    const html = await response.text();
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const titleNode = doc.querySelector('#title');
+                    const details = {
+                        title: ((titleNode ? titleNode.textContent : item.title) || item.title).replace(/\s+/g, ' ').trim(),
+                        image: extractBestImage(doc, html),
+                        price: extractLowestPrice(doc)
+                    };
+                    productDetailsCache[item.href] = details;
+                    return details;
+                } catch (error) {
+                    const fallback = {
+                        title: item.title,
+                        image: '',
+                        price: null
+                    };
+                    productDetailsCache[item.href] = fallback;
+                    return fallback;
+                }
+            }
+
+            function renderRecommendationCard(item, index) {
+                const imageMarkup = item.image
+                    ? `<img src="${escapeHtml(item.image)}" alt="Recommendation ${index + 1}">`
+                    : `<div class="product-image-fallback">No image</div>`;
+
+                return `
+                    <a class="product-item" href="${escapeHtml(item.href)}">
+                        ${imageMarkup}
+                        <div class="product-name">${escapeHtml(item.title)}</div>
+                        <div style="color: #B12704; font-weight: 700;">${escapeHtml(formatPrice(item.price))}</div>
+                    </a>
+                `;
+            }
+
+            async function renderRecommendations(currentProductName) {
+                if (!recommendationGrid) return;
+
+                const currentName = normalizeText(currentProductName);
+                const items = productCatalog
+                    .filter(function(item) {
+                        return !currentName || normalizeText(item.title) !== currentName;
+                    })
+                    .slice(0, 4);
+
+                recommendationGrid.innerHTML = items.map(function(_, index) {
+                    return `
+                        <div class="product-item">
+                            <div class="product-image-fallback">Loading ${index + 1}...</div>
+                            <div class="product-name">Fetching product details...</div>
+                            <div style="color: #B12704; font-weight: 700;">...</div>
+                        </div>
+                    `;
+                }).join('');
+
+                const resolvedItems = await Promise.all(items.map(async function(item) {
+                    const details = await loadProductDetails(item);
+                    return Object.assign({}, item, details);
+                }));
+
+                recommendationGrid.innerHTML = resolvedItems.map(renderRecommendationCard).join('');
+            }
+
+            if (orders.length > 0) {
+                const lastOrder = orders[0];
+                document.getElementById('disp-order-id').textContent = lastOrder.id || '#114-9876543-1234567';
+                document.getElementById('disp-customer-name').textContent = lastOrder.customerName || 'User Name';
+                document.getElementById('disp-product-name').textContent = lastOrder.productName || 'Product Name';
+                renderRecommendations(lastOrder.productName);
+            } else if (product.title) {
+                document.getElementById('disp-product-name').textContent = product.title;
+                renderRecommendations(product.title);
+            } else {
+                renderRecommendations('');
+            }
+
+            // --- Conversion Tracking (Pixels) ---
+            function trackConversion() {
+                const p = JSON.parse(sessionStorage.getItem('codexCheckoutProduct') || '{}');
+                const val = parseFloat(String(p.price || '0').replace(/[^0-9.]/g, '')) || 0;
+                
+                console.log('Codex: Enviando Evento de Purchase...', val);
+                
+                if (window.fbq) fbq('track', 'Purchase', { value: val, currency: 'GBP' });
+                if (window.ttq) ttq.track('CompletePayment', { value: val, currency: 'GBP' });
+                if (window.gtag) gtag('event', 'purchase', { value: val, currency: 'GBP' });
+            }
+
+            // Wait a bit for protection.js to inject base scripts
+            setTimeout(trackConversion, 2000);
+        });
+    </script>
+</body>
+</html>

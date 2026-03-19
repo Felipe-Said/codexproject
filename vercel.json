@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/protection-settings",
+      "destination": "/api/protection-settings.js"
+    },
+    {
+      "source": "/api/save-order",
+      "destination": "/api/save-order.js"
+    }
+  ]
+}

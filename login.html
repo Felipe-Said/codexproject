@@ -1,0 +1,199 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | AMZ Offer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .login-card {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #eff2f5;
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #181c32;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            color: #181c32;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        p {
+            color: #a1a5b7;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #3f4254;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e1e3ea;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #009ef7;
+        }
+
+        .btn-login {
+            width: 100%;
+            background-color: #009ef7;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            background-color: #0086d1;
+        }
+
+        .login-error {
+            display: none;
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #fff5f8;
+            border: 1px solid #f8c5d2;
+            color: #f1416c;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">
+            <i class="fas fa-boxes-stacked" style="color: #009ef7;"></i>
+            <span>AMZ Panel</span>
+        </div>
+        <h2>Bem-vindo de volta</h2>
+        <p>Insira suas credenciais para acessar o painel</p>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="email" placeholder="admin@exemplo.com" required>
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-login">Acessar Painel</button>
+            <div id="login-error" class="login-error">Credenciais invalidas.</div>
+        </form>
+    </div>
+
+    <script>
+        (function() {
+            var AUTH_SESSION_KEY = 'codex_admin_auth';
+            var AUTH_SESSION_HOURS = 12;
+            var DEFAULT_CREDENTIALS = {
+                email: 'admin@exemplo.com',
+                password: 'admin123'
+            };
+
+            function readSession() {
+                try {
+                    return JSON.parse(sessionStorage.getItem(AUTH_SESSION_KEY) || 'null');
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            function hasValidSession() {
+                var auth = readSession();
+                if (!auth || !auth.expiresAt) return false;
+                return Date.now() < auth.expiresAt;
+            }
+
+            function getCredentials() {
+                try {
+                    var stored = JSON.parse(localStorage.getItem('codex_admin_credentials') || 'null');
+                    if (stored && stored.email && stored.password) {
+                        return stored;
+                    }
+                } catch (error) {}
+                return DEFAULT_CREDENTIALS;
+            }
+
+            if (hasValidSession()) {
+                window.location.replace('admin.html');
+                return;
+            }
+
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                var email = document.getElementById('email').value.trim().toLowerCase();
+                var password = document.getElementById('password').value;
+                var errorBox = document.getElementById('login-error');
+                var credentials = getCredentials();
+
+                if (email === String(credentials.email).trim().toLowerCase() && password === String(credentials.password)) {
+                    sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({
+                        email: email,
+                        expiresAt: Date.now() + (AUTH_SESSION_HOURS * 60 * 60 * 1000)
+                    }));
+                    window.location.href = 'admin.html';
+                    return;
+                }
+
+                errorBox.style.display = 'block';
+            });
+        })();
+    </script>
+</body>
+</html>
+
