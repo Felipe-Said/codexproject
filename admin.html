@@ -8,15 +8,18 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Synchronized with admin.js Supabase Auth
+        // Intelligent session check to prevent redirect loops
         (async function() {
             const SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTI4MDMsImV4cCI6MjA4OTQ2ODgwM30.rQJZRy364VPS6uCuTkFy9s8Tyn3KxB-E6vxv9ROrdos';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             
-            // Fast check in head to prevent flickering
-            const sbSession = localStorage.getItem('sb-jmjizeydpzdtqhedndyg-auth-token');
-            if (!sbSession) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                console.log('Codex: No session found. Redirecting to login.');
                 window.location.replace('login.html');
+            } else {
+                console.log('Codex: Session confirmed.');
             }
         })();
     </script>
