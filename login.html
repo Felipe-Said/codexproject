@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
@@ -135,64 +135,42 @@
         </form>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        (function() {
-            var AUTH_SESSION_KEY = 'codex_admin_auth';
-            var AUTH_SESSION_HOURS = 12;
-            var DEFAULT_CREDENTIALS = {
-                email: 'admin@exemplo.com',
-                password: 'admin123'
-            };
+        const SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTI4MDMsImV4cCI6MjA4OTQ2ODgwM30.rQJZRy364VPS6uCuTkFy9s8Tyn3KxB-E6vxv9ROrdos';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            function readSession() {
-                try {
-                    return JSON.parse(sessionStorage.getItem(AUTH_SESSION_KEY) || 'null');
-                } catch (error) {
-                    return null;
-                }
-            }
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-            function hasValidSession() {
-                var auth = readSession();
-                if (!auth || !auth.expiresAt) return false;
-                return Date.now() < auth.expiresAt;
-            }
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const errorBox = document.getElementById('login-error');
+            const submitBtn = e.target.querySelector('button');
+            
+            errorBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Verificando...';
 
-            function getCredentials() {
-                try {
-                    var stored = JSON.parse(localStorage.getItem('codex_admin_credentials') || 'null');
-                    if (stored && stored.email && stored.password) {
-                        return stored;
-                    }
-                } catch (error) {}
-                return DEFAULT_CREDENTIALS;
-            }
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-            if (hasValidSession()) {
-                window.location.replace('admin.html');
-                return;
-            }
-
-            document.getElementById('loginForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                var email = document.getElementById('email').value.trim().toLowerCase();
-                var password = document.getElementById('password').value;
-                var errorBox = document.getElementById('login-error');
-                var credentials = getCredentials();
-
-                if (email === String(credentials.email).trim().toLowerCase() && password === String(credentials.password)) {
-                    sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({
-                        email: email,
-                        expiresAt: Date.now() + (AUTH_SESSION_HOURS * 60 * 60 * 1000)
-                    }));
-                    window.location.href = 'admin.html';
-                    return;
-                }
-
+            if (error) {
+                errorBox.textContent = 'Erro de login: ' + error.message;
                 errorBox.style.display = 'block';
-            });
-        })();
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Acessar Painel';
+            } else {
+                window.location.href = 'admin.html';
+            }
+        });
+
+        // Auto-redirect if already logged in
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) window.location.href = 'admin.html';
+        }
+        checkSession();
     </script>
 </body>
 </html>

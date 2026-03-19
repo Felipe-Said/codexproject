@@ -8,20 +8,14 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        (function() {
-            var AUTH_SESSION_KEY = 'codex_admin_auth';
-
-            function readSession() {
-                try {
-                    return JSON.parse(sessionStorage.getItem(AUTH_SESSION_KEY) || 'null');
-                } catch (error) {
-                    return null;
-                }
-            }
-
-            var auth = readSession();
-            if (!auth || !auth.expiresAt || Date.now() >= auth.expiresAt) {
-                sessionStorage.removeItem(AUTH_SESSION_KEY);
+        // Synchronized with admin.js Supabase Auth
+        (async function() {
+            const SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTI4MDMsImV4cCI6MjA4OTQ2ODgwM30.rQJZRy364VPS6uCuTkFy9s8Tyn3KxB-E6vxv9ROrdos';
+            
+            // Fast check in head to prevent flickering
+            const sbSession = localStorage.getItem('sb-jmjizeydpzdtqhedndyg-auth-token');
+            if (!sbSession) {
                 window.location.replace('login.html');
             }
         })();
