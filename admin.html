@@ -12,9 +12,64 @@
         (async function() {
             const SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTI4MDMsImV4cCI6MjA4OTQ2ODgwM30.rQJZRy364VPS6uCuTkFy9s8Tyn3KxB-E6vxv9ROrdos';
+            const AUTH_BRIDGE_KEY = 'codex_admin_supabase_bridge';
+
+            function readBridge() {
+                try {
+                    return JSON.parse(sessionStorage.getItem(AUTH_BRIDGE_KEY) || 'null');
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            function clearBridge() {
+                try {
+                    sessionStorage.removeItem(AUTH_BRIDGE_KEY);
+                } catch (error) {}
+            }
+
+            function wait(ms) {
+                return new Promise(function(resolve) {
+                    setTimeout(resolve, ms);
+                });
+            }
+
+            if (!window.supabase) {
+                console.log('Codex: Supabase library missing. Redirecting to login.');
+                window.location.replace('login.html');
+                return;
+            }
+
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            
-            const { data: { session } } = await supabase.auth.getSession();
+            let session = null;
+
+            try {
+                const sessionRes = await supabase.auth.getSession();
+                session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
+
+                if (!session) {
+                    const bridge = readBridge();
+                    if (bridge && bridge.access_token && bridge.refresh_token) {
+                        try {
+                            const bridgeRes = await supabase.auth.setSession({
+                                access_token: bridge.access_token,
+                                refresh_token: bridge.refresh_token
+                            });
+                            session = bridgeRes && bridgeRes.data ? bridgeRes.data.session : null;
+                            if (session) {
+                                clearBridge();
+                            }
+                        } catch (setError) {}
+                    }
+                }
+
+                if (!session) {
+                    await wait(250);
+                    const retryRes = await supabase.auth.getSession();
+                    session = retryRes && retryRes.data ? retryRes.data.session : null;
+                }
+            } catch (error) {}
+
             if (!session) {
                 console.log('Codex: No session found. Redirecting to login.');
                 window.location.replace('login.html');

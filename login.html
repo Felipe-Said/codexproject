@@ -51,6 +51,7 @@
         var SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
         var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTI4MDMsImV4cCI6MjA4OTQ2ODgwM30.rQJZRy364VPS6uCuTkFy9s8Tyn3KxB-E6vxv9ROrdos';
         var supabase = null;
+        var AUTH_BRIDGE_KEY = 'codex_admin_supabase_bridge';
         
         // Elementos
         var statusEl = document.getElementById('statusMsg');
@@ -116,6 +117,16 @@
                         loginBtn.disabled = false;
                         loginBtn.innerText = 'Acessar Painel';
                     } else {
+                        try {
+                            if (res.data && res.data.session) {
+                                sessionStorage.setItem(AUTH_BRIDGE_KEY, JSON.stringify({
+                                    access_token: res.data.session.access_token,
+                                    refresh_token: res.data.session.refresh_token,
+                                    expires_at: res.data.session.expires_at || null,
+                                    created_at: Date.now()
+                                }));
+                            }
+                        } catch (bridgeError) {}
                         showStatus('Sucesso! Redirecionando...', false);
                         window.location.href = 'admin.html';
                     }
