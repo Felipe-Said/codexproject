@@ -125,6 +125,9 @@ window.deleteOrder = async function(id) {
 };
 
 async function updateDashboardOrders() {
+    if (typeof window.updateDashboardOrders === 'function' && window.updateDashboardOrders !== updateDashboardOrders) {
+        return window.updateDashboardOrders();
+    }
     console.log('Updating dashboard from Supabase...');
     try {
         let orders = [];
@@ -660,35 +663,250 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update Dashboard Logic
-    function updateDashboardOrders() {
+    let salesChart = null;
+
+    function parseDashboardAmount(value) {
+        if (typeof value === 'number') return value;
+        const numeric = parseFloat(String(value || '0').replace(/[^0-9.]/g, ''));
+        return isNaN(numeric) ? 0 : numeric;
+    }
+
+    function formatDashboardCurrency(value) {
+        return `£ ${parseDashboardAmount(value).toFixed(2)}`;
+    }
+
+    function normalizeDashboardDate(order) {
+        if (order && order.created_at) {
+            const createdAt = new Date(order.created_at);
+            if (!isNaN(createdAt.getTime())) return createdAt;
+        }
+
+        if (order && order.date) {
+            const directDate = new Date(order.date);
+            if (!isNaN(directDate.getTime())) return directDate;
+
+            const match = String(order.date).match(/(\d{1,2}):(\d{2})\s+(\d{1,2})\/(\d{1,2})/);
+            if (match) {
+                const now = new Date();
+                return new Date(
+                    now.getFullYear(),
+                    parseInt(match[4], 10) - 1,
+                    parseInt(match[3], 10),
+                    parseInt(match[1], 10),
+                    parseInt(match[2], 10)
+                );
+            }
+        }
+
+        return new Date(0);
+    }
+
+    function normalizeDashboardOrder(order) {
+        const createdAt = normalizeDashboardDate(order);
+        return {
+            id: order.id || `ORD-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+            customerName: order.customer_name || order.customerName || 'Cliente',
+            productName: order.product_name || order.productName || 'Produto',
+            value: order.value || order.amount || '£ 0.00',
+            valueNumber: parseDashboardAmount(order.value || order.amount),
+            status: order.status || 'Aprovado',
+            campaignId: order.campaign_id || order.campaignId || 'Direto',
+            gateway: order.gateway || '',
+            createdAt: createdAt,
+            createdLabel: createdAt.getTime() > 0 ? createdAt.toLocaleString('pt-BR') : '-'
+        };
+    }
+
+    async function fetchDashboardOrders() {
+        let orders = [];
+
+        if (supabaseClient) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('orders')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (!error && Array.isArray(data) && data.length) {
+                    orders = data.map(normalizeDashboardOrder);
+                }
+            } catch (error) {
+                console.error('Dashboard Supabase fetch error:', error);
+            }
+        }
+
+        if (!orders.length) {
+            orders = JSON.parse(localStorage.getItem('codex_approved_orders') || '[]').map(normalizeDashboardOrder);
+        }
+
+        return orders.sort(function(a, b) {
+            return b.createdAt.getTime() - a.createdAt.getTime();
+        });
+    }
+
+    function isSameDay(left, right) {
+        return left.getFullYear() === right.getFullYear()
+            && left.getMonth() === right.getMonth()
+            && left.getDate() === right.getDate();
+    }
+
+    function updateStatCard(id, value) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    }
+
+    function updateStatChange(id, text, isPositive) {
+        const element = document.getElementById(id);
+        if (!element) return;
+        element.textContent = text;
+        element.classList.remove('positive', 'negative');
+        element.classList.add(isPositive ? 'positive' : 'negative');
+    }
+
+    function renderProductMetrics(orders, activeSessions) {
+        const tableBody = document.getElementById('product-metrics-body');
+        if (!tableBody) return;
+
+        const now = new Date();
+        const last24h = now.getTime() - (24 * 60 * 60 * 1000);
+        const metricsMap = new Map();
+
+        activeSessions.forEach(function(session) {
+            const productName = session && session.productName ? session.productName : 'Checkout sem produto';
+            if (!metricsMap.has(productName)) {
+                metricsMap.set(productName, { accesses24h: 0, activeNow: 0, orders: 0, revenue: 0 });
+            }
+            const metric = metricsMap.get(productName);
+            metric.activeNow += 1;
+            if ((session.lastSeenAt || 0) >= last24h) {
+                metric.accesses24h += 1;
+            }
+        });
+
+        orders.forEach(function(order) {
+            const productName = order.productName || 'Produto';
+            if (!metricsMap.has(productName)) {
+                metricsMap.set(productName, { accesses24h: 0, activeNow: 0, orders: 0, revenue: 0 });
+            }
+            const metric = metricsMap.get(productName);
+            metric.orders += 1;
+            metric.revenue += order.valueNumber;
+            if (order.createdAt.getTime() >= last24h) {
+                metric.accesses24h += 1;
+            }
+        });
+
+        const rows = Array.from(metricsMap.entries())
+            .sort(function(a, b) { return b[1].revenue - a[1].revenue; })
+            .slice(0, 8);
+
+        if (!rows.length) {
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #a1a5b7; padding: 20px;">Nenhum dado de produto disponivel.</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = rows.map(function(entry) {
+            const productName = entry[0];
+            const metric = entry[1];
+            const base = Math.max(metric.accesses24h, metric.orders, 1);
+            const conversion = Math.round((metric.orders / base) * 100);
+
+            return `
+                <tr>
+                    <td style="font-weight: 600;">${productName}</td>
+                    <td>${metric.accesses24h}</td>
+                    <td>${metric.activeNow}</td>
+                    <td>${conversion}%</td>
+                    <td style="font-weight: 700; color: #181c32;">${formatDashboardCurrency(metric.revenue)}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function updateSalesChart(orders) {
+        if (!salesChart) return;
+
+        const labels = [];
+        const values = [];
+        const today = new Date();
+
+        for (let offset = 6; offset >= 0; offset -= 1) {
+            const day = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset);
+            labels.push(day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''));
+            values.push(
+                orders
+                    .filter(function(order) { return isSameDay(order.createdAt, day); })
+                    .reduce(function(sum, order) { return sum + order.valueNumber; }, 0)
+            );
+        }
+
+        salesChart.data.labels = labels;
+        salesChart.data.datasets[0].data = values;
+        salesChart.update();
+    }
+
+    async function updateDashboardOrders() {
         const ordersList = document.getElementById('recent-orders-list');
         if (!ordersList) return;
 
-        const orders = JSON.parse(localStorage.getItem('codex_approved_orders') || '[]');
-        if (orders.length === 0) {
-            ordersList.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #a1a5b7; padding: 20px;">Nenhum pedido recente.</td></tr>';
-            return;
-        }
-        const recent = orders.slice(0, 8);
+        const orders = await fetchDashboardOrders();
+        const flow = getCheckoutStageData();
+        const today = new Date();
+        const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+        const totalRevenue = orders.reduce(function(sum, order) { return sum + order.valueNumber; }, 0);
+        const todayOrders = orders.filter(function(order) { return isSameDay(order.createdAt, today); });
+        const yesterdayOrders = orders.filter(function(order) { return isSameDay(order.createdAt, yesterday); });
+        const todayRevenue = todayOrders.reduce(function(sum, order) { return sum + order.valueNumber; }, 0);
+        const yesterdayRevenue = yesterdayOrders.reduce(function(sum, order) { return sum + order.valueNumber; }, 0);
+        const visitors = flow.total;
+        const conversionRate = visitors > 0 ? ((todayOrders.length / visitors) * 100) : 0;
+        const salesDelta = yesterdayRevenue > 0
+            ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
+            : (todayRevenue > 0 ? 100 : 0);
+        const ordersDelta = yesterdayOrders.length > 0
+            ? Math.round(((todayOrders.length - yesterdayOrders.length) / yesterdayOrders.length) * 100)
+            : (todayOrders.length > 0 ? 100 : 0);
 
-        ordersList.innerHTML = recent.map(order => `
-            <tr>
-                <td style="font-weight: 600;">${order.id}</td>
-                <td>${order.customerName}</td>
-                <td><span style="font-size: 0.8rem; color: #7e8299;">${order.productName}</span></td>
-                <td><span class="status-badge status-paid">${order.status || 'Aprovado'}</span></td>
-                <td>
-                    <div style="font-size: 0.75rem; background: #f8f9fa; padding: 2px 6px; border-radius: 4px; color: #7e8299;">${order.campaignId || 'Direto'}</div>
-                    ${order.gateway ? `<div style="font-size: 0.6rem; color: #009ef7; margin-top: 2px;">${order.gateway.toUpperCase()}</div>` : ''}
-                </td>
-                <td style="font-weight: 700; color: #181c32;">${order.value}</td>
-            </tr>
-        `).join('');
+        updateStatCard('dashboard-total-sales', formatDashboardCurrency(totalRevenue));
+        updateStatCard('dashboard-orders-today', String(todayOrders.length));
+        updateStatCard('dashboard-conversion-rate', `${conversionRate.toFixed(1)}%`);
+        updateStatChange(
+            'dashboard-total-sales-change',
+            todayRevenue > 0 || yesterdayRevenue > 0 ? `${salesDelta >= 0 ? '+' : ''}${salesDelta}% vs ontem` : 'Sem comparativo recente',
+            salesDelta >= 0
+        );
+        updateStatChange(
+            'dashboard-orders-today-change',
+            todayOrders.length || yesterdayOrders.length ? `${ordersDelta >= 0 ? '+' : ''}${ordersDelta}% vs ontem` : 'Nenhum pedido recente',
+            ordersDelta >= 0
+        );
+        updateStatChange(
+            'dashboard-conversion-rate-change',
+            visitors > 0 ? `${todayOrders.length} pedido(s) para ${visitors} visitante(s) ativos` : 'Aguardando visitantes ativos',
+            conversionRate >= 1
+        );
+
+        if (!orders.length) {
+            ordersList.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #a1a5b7; padding: 20px;">Nenhum pedido recente.</td></tr>';
+        } else {
+            ordersList.innerHTML = orders.slice(0, 8).map(function(order) {
+                return `
+                    <tr>
+                        <td style="font-weight: 600;">${order.id}</td>
+                        <td>${order.customerName}</td>
+                        <td><span style="font-size: 0.8rem; color: #7e8299;">${order.productName}</span></td>
+                        <td>${order.createdLabel}</td>
+                        <td style="font-weight: 700; color: #181c32;">${formatDashboardCurrency(order.valueNumber)}</td>
+                        <td><span class="status-badge ${order.status === 'Pendente' ? 'status-pending' : 'status-paid'}">${order.status}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        renderProductMetrics(orders, Object.values(readCheckoutSessions() || {}));
+        updateSalesChart(orders);
     }
     window.updateDashboardOrders = updateDashboardOrders;
-
-    // Initialize Dashboard
-    updateDashboardOrders();
 
     function readCheckoutSessions() {
         try {
@@ -804,7 +1022,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // (Keeping existing chart logic)
     const salesCtx = document.getElementById('salesChart')?.getContext('2d');
     if (salesCtx) {
-        new Chart(salesCtx, {
+        salesChart = new Chart(salesCtx, {
             type: 'line',
             data: {
                 labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
@@ -838,10 +1056,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    updateDashboardOrders();
     renderCheckoutFunnel();
-    setInterval(renderCheckoutFunnel, 5000);
+    setInterval(function() {
+        updateDashboardOrders();
+        renderCheckoutFunnel();
+    }, 5000);
     window.addEventListener('storage', function(event) {
-        if (event.key === CHECKOUT_FLOW_STORAGE_KEY) {
+        if (event.key === CHECKOUT_FLOW_STORAGE_KEY || event.key === 'codex_approved_orders') {
+            updateDashboardOrders();
             renderCheckoutFunnel();
         }
     });
@@ -898,8 +1121,28 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(checkAutoPurchase, 30000);
 
     // --- Gateway Logic ---
-    function loadGatewaySettings() {
-        const settings = JSON.parse(localStorage.getItem('codex_gateway_settings') || '{}');
+    async function loadGatewaySettings() {
+        let settings = {};
+
+        if (supabaseClient) {
+            try {
+                const { data, error } = await supabaseClient.from('admin_settings').select('*').eq('id', 1).single();
+                if (!error && data) {
+                    settings = {
+                        active: data.gateway_active || data.active_gateway || '',
+                        whopKey: data.whop_api_key || data.whopKey || '',
+                        whopBizId: data.whop_biz_id || data.whopBizId || '',
+                        stripePubKey: data.stripe_public_key || data.stripePubKey || '',
+                        stripeSecKey: data.stripe_secret_key || data.stripeSecKey || ''
+                    };
+                }
+            } catch (error) {}
+        }
+
+        if (!settings.active && !settings.whopBizId && !settings.stripePubKey && !settings.stripeSecKey) {
+            settings = JSON.parse(localStorage.getItem('codex_gateway_settings') || '{}');
+        }
+
         if (settings.active) document.getElementById('active-gateway').value = settings.active;
         if (settings.whopKey) document.getElementById('whop-api-key').value = settings.whopKey;
         if (settings.whopBizId) document.getElementById('whop-biz-id').value = settings.whopBizId;
@@ -909,7 +1152,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const saveGatewayBtn = document.getElementById('save-gateway-btn');
     if (saveGatewayBtn) {
-        saveGatewayBtn.addEventListener('click', function() {
+        saveGatewayBtn.addEventListener('click', async function() {
             const settings = {
                 active: document.getElementById('active-gateway').value,
                 whopKey: document.getElementById('whop-api-key').value,
@@ -918,6 +1161,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 stripeSecKey: document.getElementById('stripe-secret-key').value
             };
             localStorage.setItem('codex_gateway_settings', JSON.stringify(settings));
+
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient.from('admin_settings').update({
+                        gateway_active: settings.active,
+                        whop_api_key: settings.whopKey,
+                        whop_biz_id: settings.whopBizId,
+                        stripe_public_key: settings.stripePubKey,
+                        stripe_secret_key: settings.stripeSecKey
+                    }).eq('id', 1);
+
+                    if (!error) {
+                        showToast('Configurações de Gateway salvas!');
+                        return;
+                    }
+                } catch (error) {}
+            }
             showToast('Configurações de Gateway salvas!');
         });
     }

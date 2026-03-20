@@ -229,7 +229,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const product = JSON.parse(sessionStorage.getItem('codexCheckoutProduct') || '{}');
-            const orders = JSON.parse(localStorage.getItem('codex_approved_orders') || '[]');
+            const lastOrderSummary = JSON.parse(sessionStorage.getItem('codex_last_order_summary') || 'null');
+            const params = new URLSearchParams(window.location.search);
+            const orderId = params.get('order_id');
+            const sessionId = params.get('session_id');
             const recommendationGrid = document.getElementById('recommendations-grid');
 
             const productCatalog = [
@@ -400,23 +403,39 @@
                 recommendationGrid.innerHTML = resolvedItems.map(renderRecommendationCard).join('');
             }
 
-            if (orders.length > 0) {
-                const lastOrder = orders[0];
-                document.getElementById('disp-order-id').textContent = lastOrder.id || '#114-9876543-1234567';
-                document.getElementById('disp-customer-name').textContent = lastOrder.customerName || 'User Name';
-                document.getElementById('disp-product-name').textContent = lastOrder.productName || 'Product Name';
-                renderRecommendations(lastOrder.productName);
-            } else if (product.title) {
-                document.getElementById('disp-product-name').textContent = product.title;
-                renderRecommendations(product.title);
-            } else {
-                renderRecommendations('');
+            function renderOrder(order) {
+                if (!order) return;
+                document.getElementById('disp-order-id').textContent = order.id || '#114-9876543-1234567';
+                document.getElementById('disp-customer-name').textContent = order.customer_name || order.customerName || 'User Name';
+                document.getElementById('disp-product-name').textContent = order.product_name || order.productName || 'Product Name';
+                renderRecommendations(order.product_name || order.productName || '');
+            }
+
+            async function loadOrderFromApi() {
+                if (!orderId) return null;
+
+                if (sessionId) {
+                    const confirmResponse = await fetch(`/api/confirm-order?order_id=${encodeURIComponent(orderId)}&session_id=${encodeURIComponent(sessionId)}`, {
+                        cache: 'no-store'
+                    });
+                    if (confirmResponse.ok) {
+                        return await confirmResponse.json();
+                    }
+                }
+
+                const orderResponse = await fetch(`/api/order?id=${encodeURIComponent(orderId)}`, {
+                    cache: 'no-store'
+                });
+                if (!orderResponse.ok) {
+                    throw new Error('Failed to load order');
+                }
+                return await orderResponse.json();
             }
 
             // --- Conversion Tracking (Pixels) ---
-            function trackConversion() {
-                const p = JSON.parse(sessionStorage.getItem('codexCheckoutProduct') || '{}');
-                const val = parseFloat(String(p.price || '0').replace(/[^0-9.]/g, '')) || 0;
+            function trackConversion(order) {
+                const valueSource = order && order.value ? order.value : product.price;
+                const val = parseFloat(String(valueSource || '0').replace(/[^0-9.]/g, '')) || 0;
                 
                 console.log('Codex: Enviando Evento de Purchase...', val);
                 
@@ -425,8 +444,28 @@
                 if (window.gtag) gtag('event', 'purchase', { value: val, currency: 'GBP' });
             }
 
-            // Wait a bit for protection.js to inject base scripts
-            setTimeout(trackConversion, 2000);
+            (async function initSuccessPage() {
+                let resolvedOrder = null;
+
+                try {
+                    resolvedOrder = await loadOrderFromApi();
+                } catch (error) {}
+
+                if (resolvedOrder) {
+                    renderOrder(resolvedOrder);
+                } else if (lastOrderSummary) {
+                    renderOrder(lastOrderSummary);
+                } else if (product.title) {
+                    document.getElementById('disp-product-name').textContent = product.title;
+                    renderRecommendations(product.title);
+                } else {
+                    renderRecommendations('');
+                }
+
+                setTimeout(function() {
+                    trackConversion(resolvedOrder || lastOrderSummary || null);
+                }, 2000);
+            })();
         });
     </script>
 </body>

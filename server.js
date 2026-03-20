@@ -3,14 +3,18 @@ const fs = require("fs");
 const path = require("path");
 
 // Supabase Configuration
-const SUPABASE_URL = 'https://jmjizeydpzdtqhedndyg.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imptaml6ZXlkcHpkdHFoZWRuZHlnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzg5MjgwMywiZXhwIjoyMDg5NDY4ODAzfQ.9e8Ht7DblUhaV37IDqv_1fWZ_zVQr8pVWAjuuLE2n5I';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://jmjizeydpzdtqhedndyg.supabase.co';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '';
 
 let supabaseClient = null;
 try {
   const { createClient } = require('@supabase/supabase-js');
-  supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  console.log('Supabase initialized in backend mode.');
+  if (SUPABASE_SERVICE_ROLE_KEY) {
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    console.log('Supabase initialized in backend mode.');
+  } else {
+    console.warn('Supabase server key not found. API features may be unavailable.');
+  }
 } catch (e) {
   console.warn('Supabase SDK not found in backend. Using native fetch for APIs.');
 }

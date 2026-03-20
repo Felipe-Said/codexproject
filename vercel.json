@@ -12,6 +12,22 @@
     {
       "source": "/api/save-order",
       "destination": "/api/save-order.js"
+    },
+    {
+      "source": "/api/checkout-config",
+      "destination": "/api/checkout-config.js"
+    },
+    {
+      "source": "/api/create-checkout-session",
+      "destination": "/api/create-checkout-session.js"
+    },
+    {
+      "source": "/api/order",
+      "destination": "/api/order.js"
+    },
+    {
+      "source": "/api/confirm-order",
+      "destination": "/api/confirm-order.js"
     }
   ]
 }
